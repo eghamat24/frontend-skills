@@ -4,9 +4,7 @@
 
 .DESCRIPTION
     Creates a Junction under $HOME\.claude\skills for every skill in this repository
-    (develop, review, ship) plus one supporting link (vendor) that review/ship's own
-    ../vendor/ponytail references depend on once installed globally - see the "vendor"
-    comment on $Links below. This repository remains the single source of truth: nothing
+    (develop, review, ship). This repository remains the single source of truth: nothing
     is copied, only linked. Safe to run more than once.
 
 .NOTES
@@ -25,19 +23,14 @@ $SkillsDir = Join-Path $HOME '.claude\skills'
 
 # Name under $SkillsDir -> path relative to the repo root.
 #
-# "vendor" is not a Claude Code skill (repo/vendor has no top-level SKILL.md - the real
-# ponytail skills live two levels deeper, under vendor/ponytail/skills/*/SKILL.md, so this
-# link does not register a new slash-command). It exists purely so that review/SKILL.md's
-# and ship/SKILL.md's own `../vendor/ponytail` references resolve once develop/review/ship
-# are junctioned: Windows collapses ".." lexically *before* it reaches the filesystem, so a
-# ".." inside a junctioned directory does NOT cross back through the junction to the real
-# repo root - it resolves against the junction's own parent (verified empirically). Without
-# this link, `../vendor/ponytail` would point at a location that doesn't exist.
+# No "vendor" entry: review/SKILL.md bundles its own copy of the Ponytail files it needs
+# under review/skills/, so nothing reads through vendor/ponytail at runtime any more (see
+# review/SKILL.md's "Keeping ponytail current" section). vendor/ponytail remains at the
+# repo root only as a dev-time reference for refreshing that bundled copy.
 $Links = [ordered]@{
     'develop' = 'develop'
     'review'  = 'review'
     'ship'    = 'ship'
-    'vendor'  = 'vendor'
 }
 
 function Get-FullPathNoSlash {
@@ -138,22 +131,11 @@ foreach ($name in $Links.Keys) {
             continue
         }
 
-        if ($name -eq 'vendor') {
-            $marker = Join-Path $target 'ponytail\AGENTS.md'
-            if (-not (Test-Path -LiteralPath $marker)) {
-                $row.Ok = $true
-                $row.Message = "linked, but vendor/ponytail submodule looks uninitialized (missing $marker) - run: git submodule update --init --recursive"
-                $results.Add([pscustomobject]$row)
-                continue
-            }
-        }
-        else {
-            $marker = Join-Path $target 'SKILL.md'
-            if (-not (Test-Path -LiteralPath $marker)) {
-                $row.Message = "verification failed: expected $marker does not exist"
-                $results.Add([pscustomobject]$row)
-                continue
-            }
+        $marker = Join-Path $target 'SKILL.md'
+        if (-not (Test-Path -LiteralPath $marker)) {
+            $row.Message = "verification failed: expected $marker does not exist"
+            $results.Add([pscustomobject]$row)
+            continue
         }
 
         $row.Ok = $true

@@ -29,7 +29,6 @@ $Links = [ordered]@{
     'develop' = 'develop'
     'review'  = 'review'
     'ship'    = 'ship'
-    'vendor'  = 'vendor'
 }
 
 Write-Output 'Claude Code Global Skills Uninstaller'

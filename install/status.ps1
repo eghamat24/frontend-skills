@@ -22,7 +22,6 @@ $Links = [ordered]@{
     'develop' = 'develop'
     'review'  = 'review'
     'ship'    = 'ship'
-    'vendor'  = 'vendor'
 }
 
 function Get-FullPathNoSlash {
@@ -82,24 +81,13 @@ foreach ($name in $Links.Keys) {
         continue
     }
 
-    if ($name -eq 'vendor') {
-        $marker = Join-Path $target 'ponytail\AGENTS.md'
-        if (-not (Test-Path -LiteralPath $marker)) {
-            Write-Output "[WARN] $name -> $target (linked, but vendor/ponytail submodule looks uninitialized)"
-            $allOk = $false
-            continue
-        }
-        Write-Output "[OK] $name -> $target"
+    $marker = Join-Path $target 'SKILL.md'
+    if (-not (Test-Path -LiteralPath $marker)) {
+        Write-Output "[BROKEN] $name -> $target (linked, but SKILL.md is missing)"
+        $allOk = $false
+        continue
     }
-    else {
-        $marker = Join-Path $target 'SKILL.md'
-        if (-not (Test-Path -LiteralPath $marker)) {
-            Write-Output "[BROKEN] $name -> $target (linked, but SKILL.md is missing)"
-            $allOk = $false
-            continue
-        }
-        Write-Output "[OK] $name -> $target"
-    }
+    Write-Output "[OK] $name -> $target"
 }
 
 Write-Output ''
@@ -108,6 +96,6 @@ if ($allOk) {
     exit 0
 }
 else {
-    Write-Output 'One or more skills are not correctly linked. Run .\install.ps1 to fix, or see messages above.'
+    Write-Output 'One or more skills are not correctly linked. Run .\install\install.ps1 to fix, or see messages above.'
     exit 1
 }

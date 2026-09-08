@@ -2,10 +2,11 @@
 name: review
 description: >
   Simplicity/YAGNI-focused code review and planning for this project, composed
-  from two sources of truth read at runtime: vendor/ponytail (general
-  over-engineering/YAGNI rules) and ../develop (this repo's own Vue/JS/CSS
-  conventions). Exposes two commands: /review (diff-scoped simplicity +
-  convention review, never applies fixes without confirmation) and /plan
+  from two sources of truth read at runtime: a bundled, self-contained copy of
+  Ponytail's rules under ./skills/ (general over-engineering/YAGNI rules) and
+  ../develop (this repo's own Vue/JS/CSS conventions). Exposes two commands:
+  /review (diff-scoped simplicity + convention review, never applies fixes
+  without confirmation) and /plan
   (pseudocode-level feature planning under the same two rulesets). Use when
   the user invokes /review or /plan, or asks to review a diff/PR/branch for
   over-engineering or convention violations, or to plan a feature before
@@ -14,27 +15,33 @@ description: >
 
 # Review — Composed Simplicity Review & Planning
 
-This skill does not define its own rules. It orchestrates two existing rule sets, each read
-fresh at the time `/review` or `/plan` runs, so updates to either source are picked up
-automatically without ever being copied here:
+This skill does not define its own YAGNI/simplicity or convention rules — it reads them from two
+sources at the time `/review` or `/plan` runs, rather than duplicating them as prose in this file:
 
-- **`../vendor/ponytail`** (git submodule — general YAGNI ladder, over-engineering tags,
-  marker-comment convention). Canonical files: `../vendor/ponytail/AGENTS.md` and
-  `../vendor/ponytail/skills/ponytail/SKILL.md` for the ladder and rules,
-  `../vendor/ponytail/skills/ponytail-review/SKILL.md` for the diff-scoped tag taxonomy
-  (`delete`/`stdlib`/`native`/`yagni`/`shrink`), `../vendor/ponytail/skills/ponytail-audit/SKILL.md`
-  for the repo-wide variant of the same taxonomy, and `../vendor/ponytail/skills/ponytail-debt/SKILL.md`
-  for the `ponytail:` marker-comment convention (a deliberate, already-justified simplification —
-  don't re-flag it as a new finding). Written `../vendor/...` — sibling-relative to this skill's own
-  directory, the same convention `../develop` already uses — rather than a bare `vendor/...`, because
-  this skill is installed as a Junction under a global skills directory (see the repo's
-  `install.ps1`), where a bare or cwd-relative path wouldn't reliably resolve.
+- **`./skills/`** — a bundled, self-contained copy of the specific Ponytail files this skill
+  actually needs (general YAGNI ladder, over-engineering tags, marker-comment convention), so
+  `/review` and `/plan` work even when `review` is installed on its own (e.g.
+  `npx skills add ... --skill review`) with no external `vendor/` dependency alongside it.
+  Canonical files: `./skills/ponytail/AGENTS.md` and `./skills/ponytail/SKILL.md` for the ladder
+  and rules, `./skills/ponytail-review/SKILL.md` for the diff-scoped tag taxonomy
+  (`delete`/`stdlib`/`native`/`yagni`/`shrink`), `./skills/ponytail-audit/SKILL.md` for the
+  repo-wide variant of the same taxonomy, and `./skills/ponytail-debt/SKILL.md` for the
+  `ponytail:` marker-comment convention (a deliberate, already-justified simplification — don't
+  re-flag it as a new finding). These files are a point-in-time copy of the upstream Ponytail
+  project, not a live link — see "Keeping ponytail current" for how to refresh them. They are
+  supporting material for this skill only, not separate installable skills in their own right.
 - **`../develop`** (this repo's own skill — Vue3/JS/CSS conventions, architecture layering, naming).
   Canonical entry point: `../develop/SKILL.md`, which itself decides which `../develop/references/*.md`
-  files apply to a given file.
+  files apply to a given file. Written sibling-relative (`../develop`, not a bare `develop`),
+  because this skill is installed as a Junction/copy under a global skills directory alongside
+  `develop` as its own separate top-level skill (see the repo's `install/install.ps1`), where a
+  bare or cwd-relative path wouldn't reliably resolve.
 
-Never copy rule text from either source into this file or into a report. Read the source files
-directly each time; if their content changes, this skill's behavior changes with it.
+Never copy rule text from either source into this file or into a report — read the source files
+directly each time. For `develop`, that means every invocation always sees its current rules. For
+the bundled Ponytail copy under `./skills/`, it means this skill's own prose never goes stale
+relative to its own bundled files, but the bundle itself only updates when someone refreshes it
+(again, see "Keeping ponytail current").
 
 The one exception is `references/RISK.md` — the operational low/medium/high risk criteria a finding
 is scored against. That's this skill's own original content (neither ponytail nor `develop` defines
@@ -57,8 +64,8 @@ report. Never edits anything until you say so.
 3. **Skip already-tracked debt.** If a touched line already carries a `ponytail:` marker comment
    (see `ponytail-debt`'s convention), don't raise it as a new finding — it's a deliberate,
    already-justified simplification with its own noted ceiling/upgrade path.
-4. **Apply ponytail's lens.** Read `../vendor/ponytail/AGENTS.md`, `../vendor/ponytail/skills/ponytail/SKILL.md`,
-   and `../vendor/ponytail/skills/ponytail-review/SKILL.md` (or `ponytail-audit/SKILL.md` instead, if the
+4. **Apply ponytail's lens.** Read `./skills/ponytail/AGENTS.md`, `./skills/ponytail/SKILL.md`,
+   and `./skills/ponytail-review/SKILL.md` (or `./skills/ponytail-audit/SKILL.md` instead, if the
    resolved target in step 1 is repo-wide rather than a diff). Apply the YAGNI ladder and tag
    taxonomy to the changed/touched code: unnecessary abstractions, premature generalization, unused
    flexibility, hand-rolled stdlib, dependencies duplicating a native feature, anything failing the
@@ -90,7 +97,7 @@ Pseudocode-level feature planning under the same two rulesets — no real implem
 2. Read this project's `CLAUDE.md` (or whatever override doc `../develop/SKILL.md`'s own Workflow
    step 1 names, e.g. `PROJECT.md`) for the project's actual stack and any deliberate deviations.
 3. Produce a plan down to pseudocode level — file/function structure, not real code — applying:
-   - Ponytail's ladder (`../vendor/ponytail/AGENTS.md` / `../vendor/ponytail/skills/ponytail/SKILL.md`): every abstraction
+   - Ponytail's ladder (`./skills/ponytail/AGENTS.md` / `./skills/ponytail/SKILL.md`): every abstraction
      in the plan must be justified by a real, current need surfaced in the task description, never
      a speculative future one.
    - `develop`'s conventions (via `../develop/SKILL.md`'s own scoping logic, same as step 5 above):
@@ -99,13 +106,24 @@ Pseudocode-level feature planning under the same two rulesets — no real implem
 
 ## Keeping ponytail current
 
-`vendor/ponytail` (this repository's `../vendor/ponytail` from this skill's own perspective) is a
-git submodule pinned to a specific commit. Since this skill reads it at runtime rather than copying
-its rules, update it independently whenever you want the latest ladder or tag taxonomy — run this
-from the repository root, not from inside the installed skill directory:
+`./skills/` is a vendored, point-in-time copy of five files from the upstream
+[Ponytail](https://github.com/DietrichGebert/ponytail) project — not a live link, so it does not
+update on its own. This is a deliberate trade-off: it's what makes `review` installable on its own
+(`npx skills add ... --skill review`, with no sibling `vendor/` directory required), at the cost of
+needing a manual refresh step to pick up upstream changes.
+
+The repository root's `vendor/ponytail` git submodule remains the upstream source these files are
+refreshed from (see the repo root's own README for why it's kept). To refresh, from the repository
+root — not from inside an installed `review` skill directory:
 
 ```bash
 git submodule update --remote vendor/ponytail
+cp vendor/ponytail/AGENTS.md                          review/skills/ponytail/AGENTS.md
+cp vendor/ponytail/skills/ponytail/SKILL.md            review/skills/ponytail/SKILL.md
+cp vendor/ponytail/skills/ponytail-review/SKILL.md     review/skills/ponytail-review/SKILL.md
+cp vendor/ponytail/skills/ponytail-audit/SKILL.md      review/skills/ponytail-audit/SKILL.md
+cp vendor/ponytail/skills/ponytail-debt/SKILL.md       review/skills/ponytail-debt/SKILL.md
 ```
 
-Commit the resulting submodule pointer bump like any other dependency update.
+Then diff `review/skills/` to see exactly what changed upstream, and commit the submodule pointer
+bump together with the refreshed copies as one dependency-update commit.

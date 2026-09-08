@@ -23,9 +23,10 @@ time each step runs, and never copies into this file:
 - **`../develop/SKILL.md`** — coding conventions, and the project-instructions lookup (`PROJECT.md`
   or equivalent) that its Workflow step 1 already performs.
 - **`../review/SKILL.md`** — both its `/review` command (diff review, composing `../develop` and
-  `../vendor/ponytail`, scored per `../review/references/RISK.md`) and its `/plan` command
-  (pseudocode-level planning under the same two rulesets). `/ship` never reads `vendor/ponytail`
-  itself — only `/review`/`/plan` do — so this is descriptive, not a path `/ship` follows.
+  its own bundled `./skills/` copy of Ponytail, scored per `../review/references/RISK.md`) and its
+  `/plan` command (pseudocode-level planning under the same two rulesets). `/ship` never reads
+  `review/skills/` itself — only `/review`/`/plan` do — so this is descriptive, not a path `/ship`
+  follows.
 - **`../review/references/RISK.md`** — the low/medium/high criteria `/review` scores findings
   against. `/ship` consumes the risk label `/review` returns; it does not redefine or re-derive it.
 - **The target project's own verification configuration** (test runner, linter, typechecker, build
