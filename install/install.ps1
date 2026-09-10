@@ -23,10 +23,9 @@ $SkillsDir = Join-Path $HOME '.claude\skills'
 
 # Name under $SkillsDir -> path relative to the repo root.
 #
-# No "vendor" entry: review/SKILL.md bundles its own copy of the Ponytail files it needs
-# under review/skills/, so nothing reads through vendor/ponytail at runtime any more (see
-# review/SKILL.md's "Keeping ponytail current" section). vendor/ponytail remains at the
-# repo root only as a dev-time reference for refreshing that bundled copy.
+# No "vendor"/"ponytail" entry: review/SKILL.md reads the over-engineering/YAGNI ruleset at
+# runtime from the standalone `ponytail` Claude Code plugin (see review/SKILL.md's "Locating
+# the ponytail plugin" section) rather than from anything in this repository.
 $Links = [ordered]@{
     'develop' = 'develop'
     'review'  = 'review'

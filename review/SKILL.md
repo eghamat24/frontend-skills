@@ -7,10 +7,11 @@ description: >
   logic correctness, complexity, architecture, maintainability, duplication,
   performance, state/data-flow, error handling, and regression risk, not only
   bugs and convention violations. Composed from two sources of truth read at
-  runtime: a bundled, self-contained copy of Ponytail's rules under ./skills/
-  (simplicity/YAGNI principles that inform the review, not a separate
-  competing pass) and ../develop (this repo's own Vue/JS/CSS conventions).
-  /plan does pseudocode-level feature planning under the same two rulesets.
+  runtime: the standalone `ponytail` Claude Code plugin (simplicity/YAGNI
+  principles that inform the review, not a separate competing pass — must be
+  installed separately, see "Locating the ponytail plugin") and ../develop
+  (this repo's own Vue/JS/CSS conventions). /plan does pseudocode-level
+  feature planning under the same two rulesets.
   Use when the user invokes /review or /plan, or asks to review a diff/PR/
   branch for bugs, over-engineering, architecture, maintainability, or
   convention violations, or to plan a feature before writing code.
@@ -21,24 +22,42 @@ description: >
 This skill does not define its own YAGNI/simplicity or convention rules — it reads them from two
 sources at the time `/review` or `/plan` runs, rather than duplicating them as prose in this file:
 
-- **`./skills/`** — a bundled, self-contained copy of the specific Ponytail files this skill
-  actually needs (general YAGNI ladder, over-engineering tags, marker-comment convention), so
-  `/review` and `/plan` work even when `review` is installed on its own (e.g.
-  `npx skills add ... --skill review`) with no external `vendor/` dependency alongside it.
-  Canonical files: `./skills/ponytail/AGENTS.md` and `./skills/ponytail/SKILL.md` for the ladder
-  and rules, `./skills/ponytail-review/SKILL.md` for the diff-scoped tag taxonomy
-  (`delete`/`stdlib`/`native`/`yagni`/`shrink`), `./skills/ponytail-audit/SKILL.md` for the
-  repo-wide variant of the same taxonomy, and `./skills/ponytail-debt/SKILL.md` for the
-  `ponytail:` marker-comment convention (a deliberate, already-justified simplification — don't
-  re-flag it as a new finding). These files are a point-in-time copy of the upstream Ponytail
-  project, not a live link — see "Keeping ponytail current" for how to refresh them. They are
-  supporting material for this skill only, not separate installable skills in their own right.
+- **The standalone `ponytail` Claude Code plugin**
+  ([github.com/DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)), installed
+  separately via `/plugin install ponytail@ponytail`. This is a hard runtime peer-dependency of
+  `review` — not a bundled copy — so `review` no longer works standalone with zero setup; see
+  "Locating the ponytail plugin" below for how its files are found at runtime (its install path is
+  versioned and machine-specific, so it is never hardcoded here). Canonical files, read directly
+  from that plugin's resolved root: `AGENTS.md` and `skills/ponytail/SKILL.md` for the general
+  YAGNI ladder and rules, `skills/ponytail-review/SKILL.md` for the diff-scoped over-engineering tag
+  taxonomy (`delete`/`stdlib`/`native`/`yagni`/`shrink`), `skills/ponytail-audit/SKILL.md` for the
+  repo-wide variant of the same taxonomy, and `skills/ponytail-debt/SKILL.md` for the `ponytail:`
+  marker-comment convention (a deliberate, already-justified simplification — don't re-flag it as a
+  new finding).
 - **`../develop`** (this repo's own skill — Vue3/JS/CSS conventions, architecture layering, naming).
   Canonical entry point: `../develop/SKILL.md`, which itself decides which `../develop/references/*.md`
   files apply to a given file. Written sibling-relative (`../develop`, not a bare `develop`),
   because this skill is installed as a Junction/copy under a global skills directory alongside
   `develop` as its own separate top-level skill (see the repo's `install/install.ps1`), where a
   bare or cwd-relative path wouldn't reliably resolve.
+
+## Locating the ponytail plugin
+
+`review` has a hard runtime dependency on the `ponytail` Claude Code plugin being installed
+(`/plugin install ponytail@ponytail`) but never hardcodes its install path in this file: each
+plugin update lands in a new version directory, and the parent Claude Code config directory
+(`~/.claude` on macOS/Linux, `%USERPROFILE%\.claude` on Windows) differs per machine. Resolve it
+fresh every time `/review` or `/plan` runs, never once and cached:
+
+1. Read `<Claude Code config dir>/plugins/installed_plugins.json`. Find the `ponytail@ponytail`
+   entry under `"plugins"` and use its `installPath` — this is the authoritative,
+   version-independent way to find it, since the JSON always names the currently-installed version.
+2. If that file or entry doesn't exist, fall back to searching for
+   `<Claude Code config dir>/plugins/cache/*/ponytail/*/` and use whichever version directory is
+   present.
+3. If neither resolves, the plugin isn't installed — stop and tell the user to run
+   `/plugin install ponytail@ponytail`. Never fall back to a local copy or invent the rules from
+   memory.
 
 **Relationship with Ponytail.** Ponytail is a guiding engineering principle woven through the
 review below — prefer simplicity, avoid unnecessary abstraction and premature generalization,
@@ -56,9 +75,8 @@ recommend simplifying it for aesthetic reasons alone.
 
 Never copy rule text from either source into this file or into a report — read the source files
 directly each time. For `develop`, that means every invocation always sees its current rules. For
-the bundled Ponytail copy under `./skills/`, it means this skill's own prose never goes stale
-relative to its own bundled files, but the bundle itself only updates when someone refreshes it
-(again, see "Keeping ponytail current").
+ponytail, that means every invocation always sees whatever the currently-installed plugin version
+contains — there's no bundled copy to fall out of sync, and no refresh step to remember.
 
 The one exception is `references/RISK.md` — the operational low/medium/high risk criteria a finding
 is scored against. That's this skill's own original content (neither ponytail nor `develop` defines
@@ -108,8 +126,9 @@ a worse outcome than a shorter report that flags what's real.
 4. **Skip already-tracked debt.** If a touched line already carries a `ponytail:` marker comment
    (see `ponytail-debt`'s convention), don't raise it as a new finding — it's a deliberate,
    already-justified simplification with its own noted ceiling/upgrade path.
-5. **Apply ponytail's simplicity lens.** Read `./skills/ponytail/AGENTS.md`, `./skills/ponytail/SKILL.md`,
-   and `./skills/ponytail-review/SKILL.md` (or `./skills/ponytail-audit/SKILL.md` instead, if the
+5. **Apply ponytail's simplicity lens.** Resolve the installed `ponytail` plugin's root (see
+   "Locating the ponytail plugin" above), then read its `AGENTS.md`, `skills/ponytail/SKILL.md`,
+   and `skills/ponytail-review/SKILL.md` (or `skills/ponytail-audit/SKILL.md` instead, if the
    resolved target in step 1 is repo-wide rather than a diff). Apply the YAGNI ladder and tag
    taxonomy as part of judging the Complexity/Architecture/Duplication-Abstraction dimensions in
    step 7 — see "Relationship with Ponytail" above for how this fits into one engineering review
@@ -273,33 +292,9 @@ Pseudocode-level feature planning under the same two rulesets — no real implem
 2. Read this project's `CLAUDE.md` (or whatever override doc `../develop/SKILL.md`'s own Workflow
    step 1 names, e.g. `PROJECT.md`) for the project's actual stack and any deliberate deviations.
 3. Produce a plan down to pseudocode level — file/function structure, not real code — applying:
-   - Ponytail's ladder (`./skills/ponytail/AGENTS.md` / `./skills/ponytail/SKILL.md`): every abstraction
-     in the plan must be justified by a real, current need surfaced in the task description, never
-     a speculative future one.
+   - Ponytail's ladder (the installed plugin's `AGENTS.md` / `skills/ponytail/SKILL.md` — see
+     "Locating the ponytail plugin" above): every abstraction in the plan must be justified by a
+     real, current need surfaced in the task description, never a speculative future one.
    - `develop`'s conventions (via `../develop/SKILL.md`'s own scoping logic, same as `/review`'s
      step 6 above): architecture layering, naming, file placement.
 4. Do not write real implementation code in this mode — pseudocode and structure only.
-
-## Keeping ponytail current
-
-`./skills/` is a vendored, point-in-time copy of five files from the upstream
-[Ponytail](https://github.com/DietrichGebert/ponytail) project — not a live link, so it does not
-update on its own. This is a deliberate trade-off: it's what makes `review` installable on its own
-(`npx skills add ... --skill review`, with no sibling `vendor/` directory required), at the cost of
-needing a manual refresh step to pick up upstream changes.
-
-The repository root's `vendor/ponytail` git submodule remains the upstream source these files are
-refreshed from (see the repo root's own README for why it's kept). To refresh, from the repository
-root — not from inside an installed `review` skill directory:
-
-```bash
-git submodule update --remote vendor/ponytail
-cp vendor/ponytail/AGENTS.md                          review/skills/ponytail/AGENTS.md
-cp vendor/ponytail/skills/ponytail/SKILL.md            review/skills/ponytail/SKILL.md
-cp vendor/ponytail/skills/ponytail-review/SKILL.md     review/skills/ponytail-review/SKILL.md
-cp vendor/ponytail/skills/ponytail-audit/SKILL.md      review/skills/ponytail-audit/SKILL.md
-cp vendor/ponytail/skills/ponytail-debt/SKILL.md       review/skills/ponytail-debt/SKILL.md
-```
-
-Then diff `review/skills/` to see exactly what changed upstream, and commit the submodule pointer
-bump together with the refreshed copies as one dependency-update commit.

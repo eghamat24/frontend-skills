@@ -28,20 +28,11 @@ frontend-skills/
 │
 ├── review/
 │   ├── SKILL.md
-│   ├── references/
-│   │   └── RISK.md
-│   └── skills/                     (bundled, self-contained copy of the Ponytail files
-│       ├── ponytail/                this skill needs — not separate installable skills)
-│       ├── ponytail-review/
-│       ├── ponytail-audit/
-│       └── ponytail-debt/
+│   └── references/
+│       └── RISK.md
 │
 ├── ship/
 │   └── SKILL.md
-│
-├── vendor/
-│   └── ponytail/   (git submodule — dev-time only, used to refresh review/skills/; see
-│                     review/SKILL.md's "Keeping ponytail current")
 │
 ├── README.md
 └── LICENSE
@@ -59,38 +50,28 @@ The Skill uses `SKILL.md` as its entry point and `references/` for detailed rule
 
 ### `review`
 
-Simplicity/YAGNI-focused code review and planning, composed from two sources: a bundled,
-self-contained copy of [Ponytail](https://github.com/DietrichGebert/ponytail)'s rules under
-`review/skills/` (general over-engineering/YAGNI rules) and this repo's own `develop` skill
-(project-specific conventions). Fully self-contained — installable on its own with
-`npx skills add ... --skill review`, with no external `vendor/` dependency required at runtime. See
-`review/SKILL.md` (its "Keeping ponytail current" section explains how the bundled copy is
-refreshed) and `review/references/RISK.md` for the operational low/medium/high risk criteria every
-finding is scored against.
+Simplicity/YAGNI-focused code review and planning, composed from two sources: the standalone
+[Ponytail](https://github.com/DietrichGebert/ponytail) Claude Code plugin (general
+over-engineering/YAGNI rules, read from the plugin's installed files at runtime) and this repo's
+own `develop` skill (project-specific conventions). **Requires the `ponytail` plugin to be
+installed separately** — `/plugin install ponytail@ponytail` — it is a runtime peer-dependency, not
+a bundled copy, so `review` is no longer self-contained. See `review/SKILL.md` (its "Locating the
+ponytail plugin" section explains how its files are found at runtime) and
+`review/references/RISK.md` for the operational low/medium/high risk criteria every finding is
+scored against.
+
+### Prerequisites
+
+- The [`ponytail`](https://github.com/DietrichGebert/ponytail) Claude Code plugin, installed via
+  `/plugin install ponytail@ponytail`, is required at runtime by `review` (and therefore `ship`,
+  which calls `/review`). Without it, `/review` and `/plan` stop and ask you to install it rather
+  than falling back to any local copy.
 
 ### `ship`
 
 Automates the implement → review → fix loop for a task, unit by unit: implements per `develop`'s
 conventions, reviews via `/review`, auto-applies low-risk fixes, and always stops to confirm before
 applying a medium/high-risk fix. See `ship/SKILL.md`.
-
-## Submodules
-
-This repo uses a git submodule (`vendor/ponytail`) as the upstream reference the `review` skill's
-bundled `review/skills/` copy is periodically refreshed from (see `review/SKILL.md`'s "Keeping
-ponytail current"). It is a **dev-time-only** dependency — `develop`, `review`, and `ship` all work
-correctly, including via the global installer below, without it being initialized. You only need it
-if you plan to refresh `review/skills/` from upstream Ponytail yourself:
-
-```bash
-git clone --recurse-submodules https://github.com/eghamat24/frontend-skills
-```
-
-If you already cloned without that flag, run:
-
-```bash
-git submodule update --init --recursive
-```
 
 ## Global Installation (Windows)
 
@@ -99,9 +80,7 @@ into Claude Code's global skills directory once, and use `/plan`, `/review`, and
 project on the machine. This works by creating Windows directory Junctions from
 `$HOME\.claude\skills\<name>` to the corresponding directory in this repository — nothing is
 copied, so this repository stays the single source of truth: any edit here takes effect
-immediately, everywhere, with no re-installation step. (Refreshing `review`'s bundled Ponytail copy
-under `review/skills/` is the one exception — that's a deliberate point-in-time copy, not a live
-link; see `review/SKILL.md`'s "Keeping ponytail current".)
+immediately, everywhere, with no re-installation step.
 
 ### Install
 
